@@ -39,9 +39,12 @@ Verified by execution: full MusicXML/MIDI pipeline for all 3 instruments,
 CLI (levels 1/3/5 matrix), web /simplify + /edit round-trips, event parity between
 in-memory scores and re-parsed MusicXML, TAB clef export, clarinet written-key handling,
 OSMD 1.8.4 cursor API casing (against the package's .d.ts), JS timing helpers (node).
-**Never executed:** oemer / Audiveris OMR, basic-pitch audio input, the browser
-player/mic in a live browser session (the AudioContext/mic teardown bug was fixed by
-inspection — see stopPlayback vs stopAll in index.html).
+Also verified: oemer OMR end-to-end (demo scan → recognize() → simplify → outputs,
+~4 min/page on CPU; onnxruntime-gpu is excluded via a uv override in pyproject.toml
+because its import hard-requires CUDA).
+**Never executed:** Audiveris OMR, basic-pitch audio input, the browser player/mic in a
+live browser session (the AudioContext/mic teardown bug was fixed by inspection — see
+stopPlayback vs stopAll in index.html).
 
 ## Conventions (do not break)
 - Playability engines mutate scores in place and return report objects with `.adjustments`

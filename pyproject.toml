@@ -11,7 +11,10 @@ dependencies = [
 
 [project.optional-dependencies]
 web = ["flask>=3.0"]           # local web UI (scaleback-web)
-omr = ["oemer>=0.1.7"]         # image/PDF input (or install Audiveris separately)
+omr = [                        # image/PDF input (or install Audiveris separately)
+    "oemer>=0.1.7",
+    "onnxruntime>=1.17",       # CPU inference engine (see override below)
+]
 audio = ["basic-pitch>=0.3"]   # MP3/WAV input
 
 [project.scripts]
@@ -23,6 +26,11 @@ dev = [
     "pytest>=8",
     "ruff>=0.8",
 ]
+
+[tool.uv]
+# oemer hard-depends on onnxruntime-gpu, whose import fails without CUDA
+# libraries; exclude it and run inference on the CPU onnxruntime instead.
+override-dependencies = ["onnxruntime-gpu; sys_platform == 'never'"]
 
 [build-system]
 requires = ["hatchling"]
