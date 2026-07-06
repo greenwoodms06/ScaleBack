@@ -12,6 +12,7 @@ If the input is already MusicXML (.xml/.musicxml/.mxl), it is passed through.
 """
 
 import os
+import re
 import shutil
 import subprocess
 import tempfile
@@ -53,13 +54,36 @@ def _run_audiveris(source: Path, out_dir: Path) -> Path:
     exe = os.environ.get("AUDIVERIS") or shutil.which("audiveris") or shutil.which("Audiveris")
     if not exe:
         raise RuntimeError("Audiveris not found (set AUDIVERIS env var or add to PATH).")
-    subprocess.run(
+
+    def _outputs():
+        return sorted(out_dir.rglob("*.mxl")) + sorted(out_dir.rglob("*.xml"))
+
+    proc = subprocess.run(
         [exe, "-batch", "-export", "-output", str(out_dir), str(source)],
-        check=True,
+        capture_output=True, text=True,
     )
-    produced = sorted(out_dir.rglob("*.mxl")) + sorted(out_dir.rglob("*.xml"))
+    log = (proc.stdout or "") + (proc.stderr or "")
+    if not _outputs():
+        # Audiveris refuses to export a book if ANY sheet failed transcription
+        # (real scores often carry a text/cover page it flags as invalid).
+        # Retry the export on the cached book with only the valid sheets.
+        invalid = {int(m) for m in re.findall(r"#(\d+) flagged as invalid", log)}
+        seen = {int(m) for m in re.findall(r"End of Stub#(\d+)", log)}
+        valid = sorted(seen - invalid)
+        book = next(iter(out_dir.rglob("*.omr")), None)
+        if invalid and valid and book is not None:
+            print(f"  ! page(s) {sorted(invalid)} contain no readable music; "
+                  f"keeping page(s) {valid}")
+            subprocess.run(
+                [exe, "-batch", "-export", "-sheets", *map(str, valid),
+                 "-output", str(out_dir), str(book)],
+                capture_output=True, text=True,
+            )
+    produced = _outputs()
     if not produced:
-        raise RuntimeError("Audiveris produced no MusicXML output.")
+        tail = "\n".join(log.strip().splitlines()[-4:])
+        raise RuntimeError(
+            f"Audiveris could not transcribe this score.\n{tail}")
     return produced[-1]
 
 
