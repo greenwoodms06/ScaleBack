@@ -69,3 +69,10 @@ vs stopAll in index.html).
 - Timing helpers in index.html (`noteWindow`, `timingLabel`) are pure functions,
   extracted by name and unit-tested via node in tests/test_timing_windows.py — keep them
   dependency-free and top-level.
+- To CHECK OUTPUT QUALITY autonomously, render scores to PNG and look at them:
+  verovio + cairosvg are dev deps (`tk = verovio.toolkit(); tk.loadFile(xml);
+  cairosvg.svg2png(bytestring=tk.renderToSVG(1).encode(), write_to=...)`). This catches
+  what green tests can't (e.g. a structurally valid score that opens with 34 empty bars).
+- OMR output is hostile: parts may be silent for whole pages or be misread-TAB junk.
+  simplify_score picks the melody source via part_melody_score() and trims leading dead
+  bars — don't reintroduce a bare parts[0] assumption.
