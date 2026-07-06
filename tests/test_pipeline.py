@@ -219,6 +219,28 @@ def test_clarinet_level1_no_notes_above_break():
         assert cp.base_difficulty(n.pitch.midi) <= cp.LEVEL_BUDGET[1][0]
 
 
+# ------------------------------------------------------------ omr routing
+
+def test_auto_engine_prefers_audiveris_for_images(monkeypatch, tmp_path):
+    """When Audiveris is installed, auto mode should route images to it
+    (the web UI has no engine picker, so auto must pick the best engine)."""
+    from simplify_sheet import omr
+    img = tmp_path / "scan.png"
+    img.write_bytes(b"fake image")
+    sentinel = tmp_path / "recognized.xml"
+    calls = {}
+
+    def fake_audiveris(source, out_dir):
+        calls["source"] = source
+        return sentinel
+
+    monkeypatch.setattr(omr.shutil, "which",
+                        lambda name: "/fake/audiveris" if "udiveris" in name else None)
+    monkeypatch.setattr(omr, "_run_audiveris", fake_audiveris)
+    assert omr.recognize(img) == sentinel
+    assert calls["source"] == img
+
+
 # ------------------------------------------------------------ events
 
 def test_events_have_indices_and_sounding_offset():

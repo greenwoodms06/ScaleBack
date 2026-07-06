@@ -82,14 +82,16 @@ def recognize(source: str | Path, engine: str = "auto") -> Path:
 
     work = Path(tempfile.mkdtemp(prefix="omr_"))
 
-    # Audiveris handles PDFs directly and is the most accurate: prefer it
-    # when explicitly requested or when available for a PDF.
+    # Audiveris is the most accurate engine and handles images AND PDFs
+    # natively: prefer it whenever it is installed (or explicitly requested).
+    audiveris = (os.environ.get("AUDIVERIS") or shutil.which("audiveris")
+                 or shutil.which("Audiveris"))
     if engine == "audiveris":
+        return _run_audiveris(source, work)
+    if engine == "auto" and audiveris and (ext == ".pdf" or ext in IMAGE_EXTS):
         return _run_audiveris(source, work)
 
     if ext == ".pdf":
-        if engine in ("auto",) and (os.environ.get("AUDIVERIS") or shutil.which("audiveris")):
-            return _run_audiveris(source, work)
         pages = pdf_to_images(source, work)
     elif ext in IMAGE_EXTS:
         pages = [source]

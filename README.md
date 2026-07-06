@@ -119,11 +119,14 @@ including edits — runs green under pytest (35 tests) with music21 10.5, and ou
 re-parse cleanly with correct key signatures and a real TAB clef. The browser-side
 timing math is unit-tested with node. What has **not** been exercised end-to-end:
 
-- **OMR is the weak link.** The oemer path is now verified end-to-end (its demo scan →
-  simplified part, ~4 min/page on CPU; the project pins CPU onnxruntime because
-  oemer's GPU build needs CUDA). But recognition quality on *your* scans will vary:
-  oemer works best on clean scans; Audiveris is much better on real-world PDFs.
-  Handwritten music won't work. Always eyeball the result in MuseScore.
+- **OMR is the weak link.** Both engines are verified end-to-end on a real scan.
+  **Audiveris is preferred automatically when installed** — it's ~8× faster than oemer
+  on CPU (~30 s vs ~4 min/page here) and more accurate (it caught a 6/8 time signature
+  oemer missed). Install it from https://github.com/audiveris/audiveris/releases and
+  put the launcher on PATH as `audiveris` (or set the `AUDIVERIS` env var). oemer
+  (`uv sync --extra omr`) remains the pip-installable fallback; the project pins CPU
+  onnxruntime because oemer's GPU build needs CUDA. Recognition quality on your scans
+  will vary either way; handwritten music won't work. Always eyeball the result.
 - **Audio input (basic-pitch) has never been run here** — treat it as beta until you've
   fed it a real recording (`uv sync --extra audio`).
 - **The mic play-along in a live room.** The pitch detector is verified against clean

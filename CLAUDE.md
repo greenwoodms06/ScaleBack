@@ -39,12 +39,14 @@ Verified by execution: full MusicXML/MIDI pipeline for all 3 instruments,
 CLI (levels 1/3/5 matrix), web /simplify + /edit round-trips, event parity between
 in-memory scores and re-parsed MusicXML, TAB clef export, clarinet written-key handling,
 OSMD 1.8.4 cursor API casing (against the package's .d.ts), JS timing helpers (node).
-Also verified: oemer OMR end-to-end (demo scan → recognize() → simplify → outputs,
-~4 min/page on CPU; onnxruntime-gpu is excluded via a uv override in pyproject.toml
-because its import hard-requires CUDA).
-**Never executed:** Audiveris OMR, basic-pitch audio input, the browser player/mic in a
-live browser session (the AudioContext/mic teardown bug was fixed by inspection — see
-stopPlayback vs stopAll in index.html).
+Also verified: both OMR engines end-to-end on a real scan. Audiveris 5.10.2 lives at
+~/.local/opt/audiveris (symlinked as ~/.local/bin/audiveris) and is auto-preferred by
+recognize() for images and PDFs (~30 s/page vs oemer's ~4 min, and it caught a 6/8 time
+signature oemer missed). oemer stays the pip fallback; onnxruntime-gpu is excluded via
+a uv override in pyproject.toml because its import hard-requires CUDA.
+**Never executed:** basic-pitch audio input, the browser player/mic in a live browser
+session (the AudioContext/mic teardown bug was fixed by inspection — see stopPlayback
+vs stopAll in index.html).
 
 ## Conventions (do not break)
 - Playability engines mutate scores in place and return report objects with `.adjustments`
