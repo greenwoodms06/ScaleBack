@@ -219,6 +219,52 @@ def test_clarinet_level1_no_notes_above_break():
         assert cp.base_difficulty(n.pitch.midi) <= cp.LEVEL_BUDGET[1][0]
 
 
+# ------------------------------------------------------------ OMR-junk resilience
+
+def make_omr_junk_score():
+    """Mimics Audiveris output for a notation+TAB PDF: part A is silent for
+    pages then carries the tune; part B opens with music but degenerates
+    into wild TAB-staff junk."""
+    s = stream.Score()
+    a = stream.Part()
+    a.insert(0, meter.TimeSignature("4/4"))
+    for i in range(8):                       # 8 empty bars (2 "pages" of rests)
+        r = note.Rest(); r.duration.quarterLength = 4.0
+        a.insert(i * 4.0, r)
+    for i, nm in enumerate(["C4", "D4", "E4", "F4", "G4", "A4", "G4", "E4"] * 2):
+        n = note.Note(nm); n.duration.quarterLength = 1.0
+        a.insert(32.0 + i, n)
+    a.makeMeasures(inPlace=True)
+    b = stream.Part()
+    b.insert(0, meter.TimeSignature("4/4"))
+    jumps = ["C2", "C6", "D2", "B5", "E2", "C6", "D2", "A5"] * 4
+    for i, nm in enumerate(jumps):
+        n = note.Note(nm); n.duration.quarterLength = 1.0
+        b.insert(float(i), n)
+    b.makeMeasures(inPlace=True)
+    s.insert(0, a); s.insert(0, b)
+    return s
+
+def test_melody_source_prefers_sane_part():
+    from simplify_sheet.simplify import part_melody_score
+    s = make_omr_junk_score()
+    scores = [part_melody_score(p) for p in s.parts]
+    # part order in a Score is by insertion offset; find them by content
+    sane = max(scores); junk = min(scores)
+    assert sane > junk * 2, f"sane part must clearly win: {scores}"
+
+def test_simplify_trims_leading_dead_bars():
+    out = simplify_score(make_omr_junk_score(), GUITAR, SimplifySettings.for_level(2))
+    melody = out.parts[0]
+    first_bar_notes = list(melody.getElementsByClass(stream.Measure)
+                           .first().recurse().notes)
+    assert first_bar_notes, "output must not open with empty bars"
+    # and the content must be the sane tune, not the octave-jump junk
+    pitches = [n.pitch.midi for n in melody.recurse().notes]
+    leaps = [abs(x - y) for x, y in zip(pitches, pitches[1:])]
+    assert not any(jump > 12 for jump in leaps)
+
+
 # ------------------------------------------------------------ omr routing
 
 def test_auto_engine_prefers_audiveris_for_images(monkeypatch, tmp_path):

@@ -93,6 +93,55 @@ def choose_target_key(current: key.Key, profile: InstrumentProfile,
     return target, itv
 
 
+def part_melody_score(part) -> float:
+    """How melody-like a part is: many notes, few rests, few wild leaps.
+
+    OMR output from real-world PDFs often contains junk parts — misread TAB
+    staves (full of octave-plus jumps) or staves that are silent for whole
+    pages. The melody source should be the sanest part, not just parts[0].
+    """
+    notes = list(part.flatten().notes)
+    if not notes:
+        return 0.0
+    total = len(list(part.flatten().notesAndRests)) or 1
+    pitches = [max(n.pitches).midi if isinstance(n, chord.Chord) else n.pitch.midi
+               for n in notes]
+    leaps = [abs(a - b) for a, b in zip(pitches, pitches[1:])]
+    wild = (sum(1 for jump in leaps if jump > 12) / len(leaps)) if leaps else 0.0
+    return len(notes) * (len(notes) / total) * max(0.0, 1.0 - 4.0 * wild)
+
+
+def _pick_melody_part(score: stream.Score):
+    parts = list(score.parts)
+    if not parts:
+        return score
+    return max(parts, key=part_melody_score)
+
+
+def _trim_leading_silence(melody: stream.Part, bar_ql: float) -> stream.Part:
+    """Drop whole empty bars before the first note (keep pickup offsets).
+
+    OMR books whose first page has extra staves start with pages of rests.
+    """
+    first = min((float(n.offset) for n in melody.flatten().notes), default=0.0)
+    shift = int(first // bar_ql) * bar_ql
+    if shift <= 0:
+        return melody
+    out = stream.Part()
+    out.id = melody.id
+    for el in melody.flatten().notesAndRests:
+        off = float(el.offset) - shift
+        if off < 0:
+            end = off + float(el.duration.quarterLength)
+            if el.isRest and end > 1e-6:   # leading rest spills into bar 1: clip it
+                r = note.Rest()
+                r.duration.quarterLength = end
+                out.insert(0.0, r)
+            continue
+        out.insert(off, el)
+    return out
+
+
 def extract_melody(part: stream.Part) -> stream.Part:
     """Reduce a part to its top voice / top note of each chord."""
     flat = part.flatten().notesAndRests
@@ -234,6 +283,16 @@ def make_accompaniment(score: stream.Score, target_key: key.Key,
     if not profile.polyphonic:
         return None
     try:
+        # keep OMR junk parts (misread TAB staves etc.) out of the harmony
+        parts = list(score.parts)
+        if len(parts) > 1:
+            best = max(part_melody_score(p) for p in parts)
+            sane = [p for p in parts if part_melody_score(p) >= 0.25 * best]
+            if sane and len(sane) < len(parts):
+                filtered = stream.Score()
+                for p in sane:
+                    filtered.insert(0, p)
+                score = filtered
         chords = score.chordify()
     except Exception:
         return None
@@ -280,7 +339,7 @@ def simplify_score(score: stream.Score, profile: InstrumentProfile,
         target_key = current_key
 
     # 2. melody / part selection ----------------------------------------
-    src_part = score.parts[0] if score.parts else score
+    src_part = _pick_melody_part(score)
     melody = extract_melody(src_part)
 
     # 3. decorations -----------------------------------------------------
@@ -292,14 +351,16 @@ def simplify_score(score: stream.Score, profile: InstrumentProfile,
     melody.id = "melody"   # quantize_rhythm returns a fresh Part; the id is
                            # what the playability/TAB passes use to find us
 
+    ts = (score.recurse().getElementsByClass(meter.TimeSignature).first()
+          or meter.TimeSignature("4/4"))
+    melody = _trim_leading_silence(melody, float(ts.barDuration.quarterLength))
+
     # 5. range -----------------------------------------------------------
     lo, hi = profile.sounding_range(level)
     fold_into_range(melody, lo, hi)
 
     # 6. assemble --------------------------------------------------------
     out = stream.Score()
-    ts = (score.recurse().getElementsByClass(meter.TimeSignature).first()
-          or meter.TimeSignature("4/4"))
 
     inst = getattr(m21instrument, profile.music21_instrument)()
     melody.insert(0, inst)

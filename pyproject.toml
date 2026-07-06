@@ -23,8 +23,10 @@ scaleback-web = "simplify_sheet.web:main"
 
 [dependency-groups]
 dev = [
+    "cairosvg>=2.9.0",
     "pytest>=8",
     "ruff>=0.8",
+    "verovio>=6.2.1",
 ]
 
 [tool.uv]
