@@ -105,6 +105,7 @@
         padding:18px; text-align:center}
   .game .hint{color:#6a6e77; font-size:14px; margin-bottom:8px}
   #history{color:#6a6e77; margin-top:6px}
+  .explain{color:#6a6e77; font-size:14px; margin:10px 0 0}
   .game .big{font:650 34px "Fraunces",serif; margin:6px 0}
   .game .heard{font:500 16px "IBM Plex Mono",monospace; min-height:1.5em}
   .game .heard.hit{color:var(--good)} .game .heard.miss{color:var(--bad)}
@@ -185,6 +186,7 @@
           <div id="preview" aria-label="Preview of the simplified score"></div>
         </div>
       </div>
+      <p class="explain" id="prevhint"></p>
       <div class="report" id="report" hidden></div>
     </section>
 
@@ -203,7 +205,10 @@
     </section>
 
     <section>
-      <span class="label">Practice — play along at your own speed</span>
+      <span class="label">Practice — hear it, slow it down, loop the hard bars</span>
+      <p class="explain" style="margin:0 0 10px">▶ Play gives a count-in, then plays the
+        simplified part out loud while the cursor follows along in the score. The slider
+        slows the tempo without changing pitch; tick &ldquo;loop&rdquo; to repeat a bar range.</p>
       <div class="toolbar">
         <button class="ghost" id="play">▶ Play</button>
         <button class="ghost" id="stop">■ Stop</button>
@@ -217,7 +222,10 @@
     </section>
 
     <section>
-      <span class="label">Play along — the microphone listens and scores you</span>
+      <span class="label">Play along — now it&rsquo;s your turn; the microphone scores you</span>
+      <p class="explain" style="margin:0 0 10px">Hit start, wait for the count-in, then play
+        the melody on your instrument. Each dot below is one note: green = right pitch in
+        its time window, red = missed. The big note name shows what to play next.</p>
       <div class="game">
         <div class="toolbar" style="justify-content:center">
           <button class="ghost" id="mic">🎤 Start play-along</button>
@@ -320,7 +328,16 @@ function onResult(j){
   if(j.files.pdf) addLink(dl,j.files.pdf,"Download PDF");
   $("srcpane").hidden=!j.source;
   if(j.source) $("srcimg").src=j.source;
-  $("micnote").hidden=(j.instrument||$("instrument").value)!=="piano";
+  var inst=j.instrument||$("instrument").value;
+  $("micnote").hidden=inst!=="piano";
+  $("prevhint").textContent=
+    inst==="guitar" ? "Reading the simplified pane: top staff is standard notation; the "+
+      "six-line staff under it is guitar TAB — each line is a string (top line = high E), "+
+      "each number is the fret to press. The number at the start of a line is the bar number."
+    : inst==="clarinet" ? "Shown at written pitch for B♭ clarinet (it sounds a whole "+
+      "step lower — that's normal for clarinet parts). Small numbers at line starts are bar numbers."
+    : "Small digits above notes are suggested fingerings (1 = thumb … 5 = pinky). "+
+      "The number at the start of each line is the bar number.";
   showHistory();
   var lines=(j.adjustments||[]).map(function(a){return esc("~ "+a);})
     .concat((j.warnings||[]).map(function(w){return "<span class='warn'>"+esc("! "+w)+"</span>";}));
