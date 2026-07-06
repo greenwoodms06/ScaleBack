@@ -1,0 +1,12 @@
+# environments
+.venv/
+__pycache__/
+*.pyc
+
+# tool caches
+.pytest_cache/
+.ruff_cache/
+
+# build artifacts
+dist/
+*.egg-info/
