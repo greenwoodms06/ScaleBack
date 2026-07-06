@@ -32,9 +32,6 @@ fallback. Audio input: `uv sync --extra audio`. Tests: `uv run pytest -q`.
   player (tempo 40–140%, bar looping), and microphone play-along that scores your
   pitch and timing note by note.
 
-![Original vs simplified with TAB](docs/demo-entertainer.png)
-*The Entertainer: original PDF (left) → level-2 guitar arrangement with TAB (right).*
-
 ## Good to know
 
 - **OMR is the weak link.** Recognition errors happen on any real scan — eyeball the
