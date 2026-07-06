@@ -11,7 +11,7 @@ simplify_score() → apply_playability() → (guitar: add_tab_part) → MusicXML
 
 ## Layout
 ```
-simplify_sheet/
+src/simplify_sheet/
   instruments.py            # per-instrument ranges/keys/transposition (Bb clarinet = M2)
   omr.py                    # image/PDF → MusicXML (oemer or Audiveris); MIDI/audio routing
   audio_input.py            # MP3/WAV → MIDI via basic-pitch
@@ -26,11 +26,13 @@ tests/                      # pytest suite incl. node-driven JS timing tests
 ```
 
 ## Dev environment
-- venv: `~/.venvs/scaleback` (music21 10.5, pytest, flask, ruff). The repo lives on
-  DrvFS (/mnt/d), so the venv is kept on the Linux side for speed.
-- Run tests: `~/.venvs/scaleback/bin/python -m pytest tests/ -q` (35 tests, all green).
-- Lint: `~/.venvs/scaleback/bin/ruff check simplify_sheet tests` (config in ruff.toml).
-- Web UI: `PYTHONPATH=. python -m simplify_sheet.web` → http://127.0.0.1:5757
+- uv project (pyproject.toml + uv.lock; src/ layout, package `simplify_sheet`,
+  project/CLI name `scaleback`). Setup: `uv sync --extra web`.
+  OMR/audio extras are optional: `uv sync --all-extras`.
+- Run tests: `uv run pytest -q` (35 tests, all green).
+- Lint: `uv run ruff check .` (config in pyproject.toml [tool.ruff]).
+- CLI: `uv run scaleback <file> -i <instrument> -l <level>`.
+- Web UI: `uv run scaleback-web` → http://127.0.0.1:5757
 
 ## Verification status (2026-07-06)
 Verified by execution: full MusicXML/MIDI pipeline for all 3 instruments,

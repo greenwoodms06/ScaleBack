@@ -1,4 +1,0 @@
-music21>=9.1
-oemer>=0.1.7        # OMR engine (or install Audiveris separately for better accuracy)
-flask>=3.0          # optional: only needed for the web UI (python -m simplify_sheet.web)
-basic-pitch>=0.3    # optional: only needed for audio (MP3/WAV) input

@@ -7,14 +7,19 @@ Pipeline: `image/PDF → OMR (optical music recognition) → MusicXML → simpli
 
 ## Install
 
+This is a [uv](https://docs.astral.sh/uv/) project:
+
 ```bash
-pip install -r requirements.txt          # music21 + oemer
+uv sync --extra web              # core (music21) + the local web UI
+uv sync --all-extras             # + OMR (oemer) and audio (basic-pitch) input
 # optional but recommended:
 #   Audiveris  – far more accurate OMR, reads PDFs directly (https://audiveris.github.io)
 #   MuseScore  – free; lets the tool export PDF and lets you view/print the result
 #   poppler    – needed only to rasterize PDFs when using oemer
 #                (Ubuntu: apt install poppler-utils, macOS: brew install poppler)
 ```
+
+`uv run <command>` always uses the project environment — no activation needed.
 
 Point music21 at MuseScore once for PDF export:
 ```python
@@ -26,13 +31,13 @@ environment.set("musicxmlPath", "/path/to/MuseScore4")
 
 ```bash
 # absolute-beginner clarinet part from a PDF
-python -m simplify_sheet song.pdf -i clarinet -l 1
+uv run scaleback song.pdf -i clarinet -l 1
 
 # level-3 guitar arrangement (melody + simple accompaniment) from a photo
-python -m simplify_sheet photo.jpg -i guitar -l 3
+uv run scaleback photo.jpg -i guitar -l 3
 
 # skip OMR if you already have MusicXML (e.g. downloaded from MuseScore.com)
-python -m simplify_sheet song.musicxml -i piano -l 2 --formats musicxml,midi,pdf
+uv run scaleback song.musicxml -i piano -l 2 --formats musicxml,midi,pdf
 ```
 
 Outputs `<name>_<instrument>_L<level>.musicxml` (+ `.mid`, optionally `.pdf`).
@@ -87,8 +92,7 @@ Each engine returns a report of every adjustment it made, printed by the CLI:
 For anyone who'd rather not touch a terminal:
 
 ```bash
-pip install flask
-python -m simplify_sheet.web       # open http://127.0.0.1:5757
+uv run scaleback-web               # open http://127.0.0.1:5757
 ```
 
 One page, four steps: drop a score → pick the instrument → set the level on the **staff slider** (the note climbs the staff as the music gets harder) → simplify. You get an in-browser preview of the result (rendered with OpenSheetMusicDisplay, no MuseScore needed just to look), download buttons for MusicXML/MIDI, and the playability report shown as engraver-style notes. If music21 is configured with a MuseScore path, an "Also export a PDF" checkbox appears and adds a PDF download. Everything runs locally; the only network use is fetching the preview renderer once from a CDN (downloads still work offline).
@@ -97,7 +101,7 @@ Accessibility: the whole flow is keyboard-operable (the staff slider is a real r
 
 ## Audio input, TAB, editing, practice & play-along
 
-**Audio input** — drop an MP3/WAV (or `.mid`) instead of a scan; Spotify's basic-pitch transcribes it to notes first (`pip install basic-pitch`). Works best on solo recordings; the simplifier's melody extraction doubles as cleanup for messy transcriptions.
+**Audio input** — drop an MP3/WAV (or `.mid`) instead of a scan; Spotify's basic-pitch transcribes it to notes first (`uv sync --extra audio`). Works best on solo recordings; the simplifier's melody extraction doubles as cleanup for messy transcriptions.
 
 **Guitar TAB** — for guitar the output gains a tablature staff built directly from the Viterbi string/fret assignments, exported as standard MusicXML technicals (renders in MuseScore and the web preview).
 

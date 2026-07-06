@@ -11,7 +11,8 @@ from pathlib import Path
 
 import pytest
 
-TEMPLATE = Path(__file__).resolve().parents[1] / "simplify_sheet" / "templates" / "index.html"
+TEMPLATE = (Path(__file__).resolve().parents[1]
+            / "src" / "simplify_sheet" / "templates" / "index.html")
 
 pytestmark = pytest.mark.skipif(shutil.which("node") is None,
                                 reason="node not installed")
